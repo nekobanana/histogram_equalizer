@@ -50,7 +50,6 @@ __global__ void equalizer(int* image, int cdf_val_min, int width, int height) {
 }
 int main() {
     cv::Mat image = cv::imread("/home/quacksort/CLionProjects/histogram_equalizer/images/0.bmp", cv::IMREAD_GRAYSCALE);
-//    cv::Mat image = cv::imread("/home/quacksort/CLionProjects/histogram_equalizer/images/0.bmp");
     cv::imwrite("/home/quacksort/CLionProjects/histogram_equalizer/images/test.bmp", image);
     if (!image.data)
     {
@@ -76,8 +75,8 @@ int main() {
     equalizeHist(cv::Mat(width, height, CV_8U, char_img), opencv_eq);
     cv::imwrite("/home/quacksort/CLionProjects/histogram_equalizer/images/opencv.bmp", opencv_eq);
 
-    int *h_hist = ((int *)malloc(HIST_SIZE * sizeof(int)));
-    for (int i = 1; i < HIST_SIZE; i++) {
+    int h_hist[HIST_SIZE];
+    for (int i = 0; i < HIST_SIZE; i++) {
         h_hist[i] = 0;
     }
     int *d_img;
@@ -92,19 +91,23 @@ int main() {
     auto r1 = cudaDeviceSynchronize();
     auto r2 = cudaGetLastError();
     cudaMemcpy(h_hist, d_hist, HIST_SIZE * sizeof(int), cudaMemcpyDeviceToHost);
-    cudaMemcpy(h_img, d_img, width * height * sizeof(int), cudaMemcpyDeviceToHost);
+
+//    for (int i = 1; i < HIST_SIZE; i++) {
+//        printf("h_hist[%d]: %d\n", i, h_hist[i]);
+//    }
 
     //Calcolo la CDF
-    int *h_cdf = ((int *)malloc(HIST_SIZE * sizeof(int)));
+    int h_cdf[HIST_SIZE];
     int cdf_val_min = HIST_SIZE - 1;
     h_cdf[0] = h_hist[0];
     for (int i = 1; i < HIST_SIZE; i++) {
         h_cdf[i] = h_cdf[i-1] + h_hist[i];
         if (h_cdf[i] < cdf_val_min && h_cdf[i] > 0) cdf_val_min = h_cdf[i];
-        printf("CDF[%d]: %d\n", i, h_cdf[i]);
+//        printf("CDF[%d]: %d\n", i, h_cdf[i]);
     }
+//    printf("min: %d\n", cdf_val_min);
     cudaMemcpyToSymbol(d_CDF, h_cdf, HIST_SIZE * sizeof(int));
-    cudaMemcpy(d_img, h_img, width * height * sizeof(int), cudaMemcpyHostToDevice);
+//    cudaMemcpy(d_img, h_img, width * height * sizeof(int), cudaMemcpyHostToDevice);
     equalizer<<<grid_dim, block_dim>>>(d_img, cdf_val_min, width, height);
     r1 = cudaDeviceSynchronize();
     r2 = cudaGetLastError();
@@ -122,8 +125,6 @@ int main() {
     cv::imwrite("/home/quacksort/CLionProjects/histogram_equalizer/images/result.bmp", image_eq);
 
     free(h_img);
-    free(h_hist);
-    free(h_cdf);
     free(char_img);
     free(char_img_eq);
 
