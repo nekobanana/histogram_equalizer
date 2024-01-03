@@ -6,32 +6,27 @@
 #define BLOCK_DIM 16
 
 __global__ void histogram(const int* image, int* hist, int width, int height) {
-//    __shared__ int HIST[HIST_SIZE];
-//    __shared__ int IMG[BLOCK_DIM * BLOCK_DIM];
+    __shared__ int HIST[HIST_SIZE];
+    __shared__ int IMG[BLOCK_DIM * BLOCK_DIM];
     int tx = blockIdx.x * blockDim.x + threadIdx.x;
     int ty = blockIdx.y * blockDim.y + threadIdx.y;
-    if (tx + ty * width < HIST_SIZE) {
-//        HIST[tx + ty * width] = 0;
-        hist[tx + ty * width] = 0;
+    int t_id = tx + ty * width;
+    int t_id_block = threadIdx.x + threadIdx.y * BLOCK_DIM;
+    if (t_id_block < HIST_SIZE) {
+        HIST[t_id_block] = 0;
     }
-//    __syncthreads();
-//    if (tx < width && ty < height) {
-//        IMG[threadIdx.x + threadIdx.y * blockDim.x] = image[tx + ty * width];
-//    }
     __syncthreads();
     if (tx < width && ty < height) {
-//        atomicAdd(&(HIST[IMG[blockIdx.x + blockIdx.y * blockDim.x]]), 1);
-        int pixel_value = image[tx + ty * width];
-        atomicAdd(&(hist[pixel_value]), 1);
-//        printf("pixel (%d,%d): %d\n", tx, ty, pixel_value);
-//        hist[image[tx + ty * width]] = 3;
+        IMG[t_id_block] = image[t_id];
     }
     __syncthreads();
-//    if (tx + ty * width < HIST_SIZE) {
-//        printf("hist[%d]: %d\n", tx + ty * width, hist[tx + ty * width]);
-//    }
-//    __syncthreads();
-//    printf("4\n");
+    if (tx < width && ty < height) {
+        atomicAdd(&(HIST[IMG[t_id_block]]), 1);
+    }
+    __syncthreads();
+    if (t_id_block < HIST_SIZE) {
+        atomicAdd(&(hist[t_id_block]), HIST[t_id_block]);
+    }
 }
 
 int main() {
@@ -65,7 +60,7 @@ int main() {
     histogram<<<grid_dim, block_dim>>>(d_img, d_hist, width, height);
     auto r1 = cudaDeviceSynchronize();
     auto r2 = cudaGetLastError();
-    auto e2 = cudaMemcpy(h_hist, d_hist, HIST_SIZE * sizeof(int), cudaMemcpyDeviceToHost);
+    cudaMemcpy(h_hist, d_hist, HIST_SIZE * sizeof(int), cudaMemcpyDeviceToHost);
     cudaFree(d_img);
     cudaFree(d_hist);
 
@@ -83,7 +78,7 @@ int main() {
     for (int i = 0; i < HIST_SIZE; i++)
     {
         equal = equal && test_hist[i] == h_hist[i];
-        printf("hist[%d]: %d\n", i, h_hist[i]);
+//        printf("hist[%d]: %d\n", i, h_hist[i]);
     }
     if (equal) {
         std::cout << "SUCCESS" << std::endl;
