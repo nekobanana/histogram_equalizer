@@ -8,7 +8,7 @@
 
 __constant__ int d_CDF[HIST_SIZE];
 
-__global__ void histogram(int* image, int* hist, int width, int height) {
+__global__ void histogram(const unsigned char* image, int* hist, int width, int height) {
     __shared__ int HIST[HIST_SIZE];
     int tx = blockIdx.x * blockDim.x + threadIdx.x;
     int ty = blockIdx.y * blockDim.y + threadIdx.y;
@@ -27,8 +27,8 @@ __global__ void histogram(int* image, int* hist, int width, int height) {
         atomicAdd(&(hist[t_id_block]), HIST[t_id_block]);
     }
 }
-__global__ void equalizer(int* image, int cdf_val_min, int width, int height) {
-    __shared__ int IMG[BLOCK_DIM * BLOCK_DIM];
+__global__ void equalizer(unsigned char* image, int cdf_val_min, int width, int height) {
+    __shared__ unsigned char IMG[BLOCK_DIM * BLOCK_DIM];
     int tx = blockIdx.x * blockDim.x + threadIdx.x;
     int ty = blockIdx.y * blockDim.y + threadIdx.y;
     int t_id = tx + ty * width;
@@ -61,30 +61,26 @@ int main() {
     cv::Mat HSVchannels[3];
     split(imageHSV, HSVchannels);
     cv::Mat image = HSVchannels[2];
+    unsigned char* h_img = image.data;
 
-    int *h_img = (int *)malloc(width * height * sizeof(int));
-    for (int row = 0; row < height; row++)
-    {
-        for (int col = 0; col < width; col++)
-        {
-            h_img[row * width + col] = image.at<uchar>(row, col);
-        }
-    }
-    char *char_img = (char *)malloc(width * height * sizeof(char));
-    for (int i = 0; i < width * height; i++)
-    {
-        char_img[i] = static_cast<char>(h_img[i]);
-    }
+//    int *h_img = (int *)malloc(width * height * sizeof(int));
+//    for (int row = 0; row < height; row++)
+//    {
+//        for (int col = 0; col < width; col++)
+//        {
+//            h_img[row * width + col] = image.at<uchar>(row, col);
+//        }
+//    }
 
     int h_hist[HIST_SIZE];
     for (int i = 0; i < HIST_SIZE; i++) {
         h_hist[i] = 0;
     }
-    int *d_img;
+    unsigned char *d_img;
     int *d_hist;
-    cudaMalloc(&d_img, width * height * sizeof(int));
+    cudaMalloc(&d_img, width * height * sizeof(unsigned char));
     cudaMalloc(&d_hist, HIST_SIZE * sizeof(int));
-    cudaMemcpy(d_img, h_img, width * height * sizeof(int), cudaMemcpyHostToDevice);
+    cudaMemcpy(d_img, h_img, width * height * sizeof(unsigned char), cudaMemcpyHostToDevice);
     cudaMemcpy(d_hist, h_hist, HIST_SIZE * sizeof(int), cudaMemcpyHostToDevice);
     dim3 block_dim = dim3(BLOCK_DIM, BLOCK_DIM);
     dim3 grid_dim = dim3((width + BLOCK_DIM - 1) / BLOCK_DIM, (height + BLOCK_DIM - 1) / BLOCK_DIM);
@@ -102,7 +98,7 @@ int main() {
     int *d_cdf;
     cudaMalloc(&d_cdf, HIST_SIZE * sizeof(int));
 
-    Brent_Kung_scan_kernel<<<1, HIST_SIZE, HIST_SIZE>>>(d_hist, d_cdf, HIST_SIZE);
+    Brent_Kung_scan_kernel<<<1, HIST_SIZE/2, HIST_SIZE>>>(d_hist, d_cdf, HIST_SIZE);
     r1 = cudaDeviceSynchronize();
     r2 = cudaGetLastError();
     cudaMemcpy(h_cdf, d_cdf, HIST_SIZE * sizeof(int), cudaMemcpyDeviceToHost);
@@ -127,27 +123,26 @@ int main() {
     equalizer<<<grid_dim, block_dim>>>(d_img, cdf_val_min, width, height);
     r1 = cudaDeviceSynchronize();
     r2 = cudaGetLastError();
-    cudaMemcpy(h_img, d_img, width * height * sizeof(int), cudaMemcpyDeviceToHost);
+    cudaMemcpy(h_img, d_img, width * height * sizeof(unsigned char), cudaMemcpyDeviceToHost);
 
     cudaFree(d_img);
     cudaFree(d_hist);
 
-    char *char_img_eq = (char *)malloc(width * height * sizeof(char));
-    for (int i = 0; i < width * height; i++)
-    {
-        char_img_eq[i] = static_cast<char>(h_img[i]);
-    }
+//    char *char_img_eq = (char *)malloc(width * height * sizeof(char));
+//    for (int i = 0; i < width * height; i++)
+//    {
+//        char_img_eq[i] = static_cast<char>(h_img[i]);
+//    }
 
-    cv::Mat valueEq = cv::Mat(width, height, CV_8U, char_img_eq);
+    cv::Mat valueEq = cv::Mat(width, height, CV_8U, h_img);
     HSVchannels[2] = valueEq;
     cv::merge(HSVchannels, 3, imageHSV);
     cv::Mat eqImageBGR;
     cvtColor(imageHSV, eqImageBGR, cv::COLOR_HSV2BGR);
     cv::imwrite("/home/quacksort/CLionProjects/histogram_equalizer/images/result.bmp", eqImageBGR);
 
-    free(h_img);
-    free(char_img);
-    free(char_img_eq);
+//    free(h_img);
+//    free(char_img_eq);
 
     return 0;
 }
