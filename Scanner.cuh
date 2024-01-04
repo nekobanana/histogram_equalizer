@@ -1,7 +1,7 @@
 #ifndef HISTOGRAM_EQUALIZER_SCANNER_CUH
 #define HISTOGRAM_EQUALIZER_SCANNER_CUH
 
-__global__ void Brent_Kung_scan_kernel(int *X, int *Y, int InputSize, int sectionSize) {
+__global__ void Brent_Kung_scan_kernel(int *X, int *Y, int InputSize) {
     extern __shared__ int XY[];
     int i = 2 * blockIdx.x * blockDim.x + threadIdx.x;
     if (i < InputSize) {
@@ -13,14 +13,14 @@ __global__ void Brent_Kung_scan_kernel(int *X, int *Y, int InputSize, int sectio
     for (unsigned int stride = 1; stride <= blockDim.x; stride *= 2) {
         __syncthreads();
         int index = (threadIdx.x + 1) * 2 * stride -1;
-        if (index < sectionSize) {
+        if (index < InputSize) {
             XY[index] += XY[index - stride];
         }
     }
-    for (int stride = sectionSize/4; stride > 0; stride /= 2) {
+    for (int stride = InputSize/4; stride > 0; stride /= 2) {
         __syncthreads();
         int index = (threadIdx.x + 1) * stride * 2 - 1;
-        if(index + stride < sectionSize) {
+        if(index + stride < InputSize) {
             XY[index + stride] += XY[index];
         }
     }

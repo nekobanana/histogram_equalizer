@@ -10,7 +10,6 @@ __constant__ int d_CDF[HIST_SIZE];
 
 __global__ void histogram(int* image, int* hist, int width, int height) {
     __shared__ int HIST[HIST_SIZE];
-    __shared__ int IMG[BLOCK_DIM * BLOCK_DIM]; //TODO non necessaria
     int tx = blockIdx.x * blockDim.x + threadIdx.x;
     int ty = blockIdx.y * blockDim.y + threadIdx.y;
     int t_id = tx + ty * width;
@@ -18,12 +17,9 @@ __global__ void histogram(int* image, int* hist, int width, int height) {
     if (t_id_block < HIST_SIZE) {
         HIST[t_id_block] = 0;
     }
-    if (tx < width && ty < height) {
-        IMG[t_id_block] = image[t_id];
-    }
     __syncthreads(); // dopo inizializzazione shared memory
     if (tx < width && ty < height) {
-        atomicAdd(&(HIST[IMG[t_id_block]]), 1);
+        atomicAdd(&(HIST[image[t_id]]), 1);
     }
     __syncthreads(); // per sincronizzare i thread all'interno dello stesso blocco prima di sommare
                      // i contenuti delle shared memory sulla global memory
@@ -106,7 +102,7 @@ int main() {
     int *d_cdf;
     cudaMalloc(&d_cdf, HIST_SIZE * sizeof(int));
 
-    Brent_Kung_scan_kernel<<<1, HIST_SIZE, HIST_SIZE>>>(d_hist, d_cdf, HIST_SIZE, HIST_SIZE);
+    Brent_Kung_scan_kernel<<<1, HIST_SIZE, HIST_SIZE>>>(d_hist, d_cdf, HIST_SIZE);
     r1 = cudaDeviceSynchronize();
     r2 = cudaGetLastError();
     cudaMemcpy(h_cdf, d_cdf, HIST_SIZE * sizeof(int), cudaMemcpyDeviceToHost);
