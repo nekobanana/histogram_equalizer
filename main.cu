@@ -1,5 +1,6 @@
 #include <iostream>
 #include <opencv2/opencv.hpp>
+#include "Scanner.cuh"
 
 #define COLOR_DEPTH 8
 #define HIST_SIZE (2 << (COLOR_DEPTH - 1))
@@ -98,14 +99,29 @@ int main() {
 
     //Calcolo la CDF
     int h_cdf[HIST_SIZE];
-    int cdf_val_min = HIST_SIZE - 1;
-    h_cdf[0] = h_hist[0];
+    int *d_cdf;
+    cudaMalloc(&d_cdf, HIST_SIZE * sizeof(int));
+
+    Brent_Kung_scan_kernel<<<1, HIST_SIZE, HIST_SIZE>>>(d_hist, d_cdf, HIST_SIZE, HIST_SIZE);
+    r1 = cudaDeviceSynchronize();
+    r2 = cudaGetLastError();
+    cudaMemcpy(h_cdf, d_cdf, HIST_SIZE * sizeof(int), cudaMemcpyDeviceToHost);
+
+
     for (int i = 1; i < HIST_SIZE; i++) {
-        h_cdf[i] = h_cdf[i-1] + h_hist[i];
-        if (h_cdf[i] < cdf_val_min && h_cdf[i] > 0) cdf_val_min = h_cdf[i];
-//        printf("CDF[%d]: %d\n", i, h_cdf[i]);
+        printf("CDF[%d]: %d\n", i, h_cdf[i]);
+    }
+    int cdf_val_min = h_cdf[HIST_SIZE - 1];
+    //    h_cdf[0] = h_hist[0];
+    for (int i = 1; i < HIST_SIZE; i++) {
+//        h_cdf[i] = h_cdf[i-1] + h_hist[i];
+        if (h_cdf[i] > 0) {
+            cdf_val_min = h_cdf[i];
+            break;
+        }
     }
 //    printf("min: %d\n", cdf_val_min);
+
     cudaMemcpyToSymbol(d_CDF, h_cdf, HIST_SIZE * sizeof(int));
 //    cudaMemcpy(d_img, h_img, width * height * sizeof(int), cudaMemcpyHostToDevice);
     equalizer<<<grid_dim, block_dim>>>(d_img, cdf_val_min, width, height);

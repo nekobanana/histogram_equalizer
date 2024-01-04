@@ -3,7 +3,8 @@ project(histogram_equalizer CUDA)
 
 set(CMAKE_CUDA_STANDARD 11)
 
-add_executable(histogram_equalizer main.cu)
+add_executable(histogram_equalizer main.cu
+        Scanner.cuh)
 find_package( OpenCV REQUIRED )
 include_directories( ${OpenCV_INCLUDE_DIRS} )
 
