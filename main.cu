@@ -50,15 +50,22 @@ __global__ void equalizer(int* image, int cdf_val_min, int width, int height) {
     }
 }
 int main() {
-    cv::Mat image = cv::imread("/home/quacksort/CLionProjects/histogram_equalizer/images/0.bmp", cv::IMREAD_GRAYSCALE);
-    cv::imwrite("/home/quacksort/CLionProjects/histogram_equalizer/images/test.bmp", image);
-    if (!image.data)
+//    cv::Mat image = cv::imread("/home/quacksort/CLionProjects/histogram_equalizer/images/0.bmp", cv::IMREAD_GRAYSCALE);
+    cv::Mat origImage = cv::imread("/home/quacksort/CLionProjects/histogram_equalizer/images/0.bmp");
+
+    if (!origImage.data)
     {
         printf("Image not found\n");
         return -1;
     }
-    int width = image.cols;
-    int height = image.rows;
+    int width = origImage.cols;
+    int height = origImage.rows;
+    cv::Mat imageHSV;
+    cvtColor(origImage, imageHSV, cv::COLOR_BGR2HSV);
+    cv::Mat HSVchannels[3];
+    split(imageHSV, HSVchannels);
+    cv::Mat image = HSVchannels[2];
+
     int *h_img = (int *)malloc(width * height * sizeof(int));
     for (int row = 0; row < height; row++)
     {
@@ -72,9 +79,6 @@ int main() {
     {
         char_img[i] = static_cast<char>(h_img[i]);
     }
-    cv::Mat opencv_eq;
-    equalizeHist(cv::Mat(width, height, CV_8U, char_img), opencv_eq);
-    cv::imwrite("/home/quacksort/CLionProjects/histogram_equalizer/images/opencv.bmp", opencv_eq);
 
     int h_hist[HIST_SIZE];
     for (int i = 0; i < HIST_SIZE; i++) {
@@ -137,8 +141,13 @@ int main() {
     {
         char_img_eq[i] = static_cast<char>(h_img[i]);
     }
-    cv::Mat image_eq = cv::Mat(width, height, CV_8U, char_img_eq);
-    cv::imwrite("/home/quacksort/CLionProjects/histogram_equalizer/images/result.bmp", image_eq);
+
+    cv::Mat valueEq = cv::Mat(width, height, CV_8U, char_img_eq);
+    HSVchannels[2] = valueEq;
+    cv::merge(HSVchannels, 3, imageHSV);
+    cv::Mat eqImageBGR;
+    cvtColor(imageHSV, eqImageBGR, cv::COLOR_HSV2BGR);
+    cv::imwrite("/home/quacksort/CLionProjects/histogram_equalizer/images/result.bmp", eqImageBGR);
 
     free(h_img);
     free(char_img);
