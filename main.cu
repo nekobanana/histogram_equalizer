@@ -3,8 +3,7 @@
 #include <filesystem>
 #include "Scanner.cuh"
 
-#define COLOR_DEPTH 8
-#define HIST_SIZE (2 << (COLOR_DEPTH - 1))
+#define HIST_SIZE 256
 #define BLOCK_DIM 16
 
 __constant__ int d_CDF[HIST_SIZE];
@@ -56,7 +55,7 @@ int main() {
         if (!origImage.data)
         {
             printf("Image not found\n");
-            return -1;
+            continue;
         }
         int width = origImage.cols;
         int height = origImage.rows;
@@ -65,8 +64,9 @@ int main() {
         cv::Mat HSVchannels[3];
         split(imageHSV, HSVchannels);
         cv::Mat image = HSVchannels[2];
-        unsigned char* h_img = image.data;
 
+        auto startTime = std::chrono::high_resolution_clock::now();
+        unsigned char* h_img = image.data;
         int h_hist[HIST_SIZE];
         for (int i = 0; i < HIST_SIZE; i++) {
             h_hist[i] = 0;
@@ -115,6 +115,9 @@ int main() {
         cudaFree(d_img);
         cudaFree(d_hist);
 
+        auto endTime = std::chrono::high_resolution_clock::now();
+        double elapsedTime = static_cast<double>(std::chrono::duration_cast<std::chrono::nanoseconds>(endTime - startTime).count()) / 1000000000;
+        printf("%s\t%fs\n", imagePath.filename().c_str(), elapsedTime);
         cv::Mat valueEq = cv::Mat(height, width, CV_8U, h_img);
         HSVchannels[2] = valueEq;
         cv::merge(HSVchannels, 3, imageHSV);
@@ -122,7 +125,5 @@ int main() {
         cvtColor(imageHSV, eqImageBGR, cv::COLOR_HSV2BGR);
         cv::imwrite(std::filesystem::path("../results") / imagePath.filename(), eqImageBGR);
     }
-
-
     return 0;
 }
