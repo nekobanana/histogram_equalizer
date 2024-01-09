@@ -1,9 +1,9 @@
 import re
 
-output_filename = "results.csv"
+block_dim = 8
 
-results_par = "../parallel/results/results.txt"
-results_seq = "../seq/results/results.txt"
+# results_par = "../parallel/results/results.txt"
+# results_seq = "../seq/results/results.txt"
 def get_results(results_file):
     execution_times = {}
     with open(results_file, "r") as f:
@@ -24,13 +24,15 @@ def get_results(results_file):
             execution_times[(f"{image_w}x{image_h}", int(image_w)*int(image_h))] = run_time
     return execution_times
 
-with open("results_seq.csv", "w") as f:
-    f.seek(0)
-    f.write("image_size; image_size_pixels; execution_time\n")
-    for (image_size, image_size_pixels), time in get_results(results_seq).items():
-        f.write(f"{image_size}; {image_size_pixels}; {time}\n")
-with open("results_par.csv", "w") as f:
-    f.seek(0)
-    f.write("image_size; image_size_pixels; execution_time\n")
-    for (image_size, image_size_pixels), time in get_results(results_par).items():
-        f.write(f"{image_size}; {image_size_pixels}; {time}\n")
+def write_csv(input_file, output_file):
+    with open(output_file, "w") as f:
+        f.seek(0)
+        f.write("image_size; image_size_pixels; execution_time\n")
+        for (image_size, image_size_pixels), time in get_results(input_file).items():
+            f.write(f"{image_size}; {image_size_pixels}; {time}\n")
+
+if __name__ == "__main__":
+    write_csv("../seq/results/results.txt", "results_seq.csv")
+    write_csv("../parallel/results/results_8.txt", "results_par_8.csv")
+    write_csv("../parallel/results/results_16.txt", "results_par_16.csv")
+    write_csv("../parallel/results/results_32.txt", "results_par_32.csv")
