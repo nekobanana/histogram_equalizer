@@ -21,7 +21,7 @@ def exec_times():
     x = np.arange(sizes) * 8
 
     fig, ax = plt.subplots(layout='constrained')
-    fig.set_size_inches(15, 8)
+    fig.set_size_inches(12, 6)
 
     plt.yscale("log")
     offset = width * multiplier
@@ -78,7 +78,7 @@ def speedup():
     x = np.arange(sizes)
 
     fig, ax = plt.subplots(layout='constrained')
-    fig.set_size_inches(10, 8)
+    fig.set_size_inches(10, 6)
 
     ax.bar([], [])
     offset = width * multiplier

@@ -56,7 +56,7 @@ int main() {
 
             //Calcolo la CDF
             int h_cdf[HIST_SIZE];
-            int cdf_val_min = h_cdf[HIST_SIZE - 1];
+            int cdf_val_min = h_hist[0];
 
             h_cdf[0] = h_hist[0];
             for (int i = 1; i < HIST_SIZE; i++) {

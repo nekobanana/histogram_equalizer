@@ -108,7 +108,7 @@ int main() {
 //            printf("CDF[%d]: %d\n", i, h_cdf[i]);
 //        }
             int cdf_val_min = h_cdf[HIST_SIZE - 1];
-            for (int i = 1; i < HIST_SIZE; i++) {
+            for (int i = 0; i < HIST_SIZE; i++) {
                 if (h_cdf[i] > 0) {
                     cdf_val_min = h_cdf[i];
                     break;
