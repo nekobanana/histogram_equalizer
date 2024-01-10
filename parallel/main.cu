@@ -4,7 +4,8 @@
 #include "Scanner.cuh"
 
 #define HIST_SIZE 256
-#define BLOCK_DIM 16
+#define BLOCK_DIM_X 32
+#define BLOCK_DIM_Y 32
 
 __constant__ int d_CDF[HIST_SIZE];
 
@@ -13,7 +14,7 @@ __global__ void histogram(const unsigned char* image, int* hist, int width, int 
     int tx = blockIdx.x * blockDim.x + threadIdx.x;
     int ty = blockIdx.y * blockDim.y + threadIdx.y;
     int t_id = tx + ty * width;
-    int t_id_block = threadIdx.x + threadIdx.y * BLOCK_DIM;
+    int t_id_block = threadIdx.x + threadIdx.y * BLOCK_DIM_X;
     if (t_id_block < HIST_SIZE) {
         HIST[t_id_block] = 0;
     }
@@ -28,11 +29,11 @@ __global__ void histogram(const unsigned char* image, int* hist, int width, int 
     }
 }
 __global__ void equalizer(unsigned char* image, int cdf_val_min, int width, int height) {
-    __shared__ unsigned char IMG[BLOCK_DIM * BLOCK_DIM];
+    __shared__ unsigned char IMG[BLOCK_DIM_X * BLOCK_DIM_Y];
     int tx = blockIdx.x * blockDim.x + threadIdx.x;
     int ty = blockIdx.y * blockDim.y + threadIdx.y;
     int t_id = tx + ty * width;
-    int t_id_block = threadIdx.x + threadIdx.y * BLOCK_DIM;
+    int t_id_block = threadIdx.x + threadIdx.y * BLOCK_DIM_X;
     if (tx < width && ty < height) {
         IMG[t_id_block] = image[t_id];
     }
@@ -87,8 +88,8 @@ int main() {
             cudaMalloc(&d_hist, HIST_SIZE * sizeof(int));
             cudaMemcpy(d_img, h_img, width * height * sizeof(unsigned char), cudaMemcpyHostToDevice);
             cudaMemcpy(d_hist, h_hist, HIST_SIZE * sizeof(int), cudaMemcpyHostToDevice);
-            dim3 block_dim = dim3(BLOCK_DIM, BLOCK_DIM);
-            dim3 grid_dim = dim3((width + BLOCK_DIM - 1) / BLOCK_DIM, (height + BLOCK_DIM - 1) / BLOCK_DIM);
+            dim3 block_dim = dim3(BLOCK_DIM_X, BLOCK_DIM_Y);
+            dim3 grid_dim = dim3((width + BLOCK_DIM_X - 1) / BLOCK_DIM_X, (height + BLOCK_DIM_Y - 1) / BLOCK_DIM_Y);
             histogram<<<grid_dim, block_dim>>>(d_img, d_hist, width, height);
             auto r1 = cudaDeviceSynchronize();
             auto r2 = cudaGetLastError();
@@ -99,7 +100,7 @@ int main() {
             int *d_cdf;
             cudaMalloc(&d_cdf, HIST_SIZE * sizeof(int));
 
-            Brent_Kung_scan_kernel<<<1, HIST_SIZE / 2, HIST_SIZE>>>(d_hist, d_cdf, HIST_SIZE);
+            Brent_Kung_scan_kernel<<<1, HIST_SIZE / 2>>>(d_hist, d_cdf, HIST_SIZE);
             r1 = cudaDeviceSynchronize();
             r2 = cudaGetLastError();
             cudaMemcpy(h_cdf, d_cdf, HIST_SIZE * sizeof(int), cudaMemcpyDeviceToHost);

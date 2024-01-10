@@ -5,54 +5,26 @@ import matplotlib as mpl
 # mpl.use("TkAgg")
 
 def exec_times():
-    df_par_8 = pd.read_csv("results_par_8.csv", sep="; ")
-    df_par_16 = pd.read_csv("results_par_16.csv", sep="; ")
-    df_par_32 = pd.read_csv("results_par_32.csv", sep="; ")
-    df_seq = pd.read_csv("results_seq.csv", sep="; ")
-    df_par_8.sort_values(by=["image_size_pixels"], inplace=True)
-    df_par_16.sort_values(by=["image_size_pixels"], inplace=True)
-    df_par_32.sort_values(by=["image_size_pixels"], inplace=True)
-    df_seq.sort_values(by=["image_size_pixels"], inplace=True)
+    df_par_256, df_par_320, df_par_512, df_par_768, df_par_1024, df_seq = get_df()
 
-    width = 1.8  # the width of the bars
+    width = 1.3  # the width of the bars
     multiplier = -0.5
 
     sizes = len(df_seq)
-    x = np.arange(sizes) * 8
+    x = np.arange(sizes) * 9
 
     fig, ax = plt.subplots(layout='constrained')
     fig.set_size_inches(12, 6)
 
     plt.yscale("log")
-    offset = width * multiplier
-    rects = ax.bar(x + offset, df_seq["execution_time"], width=width,
-                   label="sequential")
-    labels_seq = [f"{t:.3}" for t in df_seq["execution_time"]]
-    ax.bar_label(rects, padding=3, labels=labels_seq)
-    multiplier += 1
 
-    offset = width * multiplier
-    rects = ax.bar(x + offset, df_par_8["execution_time"], width=width,
-                   label="parallel (BLOCK_DIM=8)")
-    labels_seq = [f"{t:.3}" for t in df_par_8["execution_time"]]
-    ax.bar_label(rects, padding=7, labels=labels_seq)
-    multiplier += 1
+    multiplier = plot_bar(ax, df_seq["execution_time"], multiplier, width, x, "sequential", 3)
+    multiplier = plot_bar(ax, df_par_256["execution_time"], multiplier, width, x, "parallel (block 16x16)", 3)
+    multiplier = plot_bar(ax, df_par_320["execution_time"], multiplier, width, x, "parallel (block 32x16)", 9)
+    multiplier = plot_bar(ax, df_par_512["execution_time"], multiplier, width, x, "parallel (block 16x20)", 3)
+    multiplier = plot_bar(ax, df_par_768["execution_time"], multiplier, width, x, "parallel (block 32x24)", 9)
+    multiplier = plot_bar(ax, df_par_1024["execution_time"], multiplier, width, x, "parallel (block 32x32)", 3)
 
-    offset = width * multiplier
-    rects = ax.bar(x + offset, df_par_16["execution_time"], width=width,
-                   label="parallel (BLOCK_DIM=16)")
-    labels_seq = [f"{t:.3}" for t in df_par_16["execution_time"]]
-    ax.bar_label(rects, padding=2, labels=labels_seq)
-    multiplier += 1
-
-    offset = width * multiplier
-    rects = ax.bar(x + offset, df_par_32["execution_time"], width=width,
-                   label="parallel (BLOCK_DIM=32)")
-    labels_seq = [f"{t:.3}" for t in df_par_32["execution_time"]]
-    ax.bar_label(rects, padding=12, labels=labels_seq)
-    multiplier += 1
-
-    # Add some text for labels, title and custom x-axis tick labels, etc.
     ax.set_ylabel('Execution time')
     ax.set_title('Execution time')
     ax.set_xticks(x + width, df_seq["image_size"])
@@ -62,45 +34,23 @@ def exec_times():
     plt.close()
 
 def speedup():
-    df_par_8 = pd.read_csv("results_par_8.csv", sep="; ")
-    df_par_16 = pd.read_csv("results_par_16.csv", sep="; ")
-    df_par_32 = pd.read_csv("results_par_32.csv", sep="; ")
-    df_seq = pd.read_csv("results_seq.csv", sep="; ")
-    df_par_8.sort_values(by=["image_size_pixels"], inplace=True)
-    df_par_16.sort_values(by=["image_size_pixels"], inplace=True)
-    df_par_32.sort_values(by=["image_size_pixels"], inplace=True)
-    df_seq.sort_values(by=["image_size_pixels"], inplace=True)
+    df_par_256, df_par_320, df_par_512, df_par_768, df_par_1024, df_seq = get_df()
 
-    width = 0.27  # the width of the bars
-    multiplier = 1
+    width = 1.5  # the width of the bars
+    multiplier = -1
 
     sizes = len(df_seq)
-    x = np.arange(sizes)
+    x = np.arange(sizes) * 8
 
     fig, ax = plt.subplots(layout='constrained')
-    fig.set_size_inches(10, 6)
+    fig.set_size_inches(12, 6)
 
     ax.bar([], [])
-    offset = width * multiplier
-    rects = ax.bar(x + offset, df_seq["execution_time"] / df_par_8["execution_time"], width,
-                   label="parallel (BLOCK_DIM=8)")
-    labels_seq = [f"{t:.3}" for t in df_seq["execution_time"] / df_par_8["execution_time"]]
-    ax.bar_label(rects, padding=3, labels=labels_seq)
-    multiplier += 1
-
-    offset = width * multiplier
-    rects = ax.bar(x + offset, df_seq["execution_time"] / df_par_16["execution_time"], width,
-                   label="parallel (BLOCK_DIM=16)")
-    labels_seq = [f"{t:.3}" for t in df_seq["execution_time"] / df_par_16["execution_time"]]
-    ax.bar_label(rects, padding=3, labels=labels_seq)
-    multiplier += 1
-
-    offset = width * multiplier
-    rects = ax.bar(x + offset, df_seq["execution_time"] / df_par_32["execution_time"], width,
-                   label="parallel (BLOCK_DIM=32)")
-    labels_seq = [f"{t:.3}" for t in df_seq["execution_time"] / df_par_32["execution_time"]]
-    ax.bar_label(rects, padding=3, labels=labels_seq)
-    multiplier += 1
+    multiplier = plot_bar(ax, df_seq["execution_time"] / df_par_256["execution_time"], multiplier, width, x, "block 16x16", 3, True)
+    multiplier = plot_bar(ax, df_seq["execution_time"] / df_par_320["execution_time"], multiplier, width, x, "block 32x16", 3, True)
+    multiplier = plot_bar(ax, df_seq["execution_time"] / df_par_512["execution_time"], multiplier, width, x, "block 20x16", 3, True)
+    multiplier = plot_bar(ax, df_seq["execution_time"] / df_par_768["execution_time"], multiplier, width, x, "block 32x24", 3, True)
+    multiplier = plot_bar(ax, df_seq["execution_time"] / df_par_1024["execution_time"], multiplier, width, x, "block 32x32", 3, True)
 
     # Add some text for labels, title and custom x-axis tick labels, etc.
     ax.set_ylabel('Speedup')
@@ -111,6 +61,42 @@ def speedup():
     plt.savefig("speedup")
     plt.close()
 
+
+def get_df():
+    df_par_256 = pd.read_csv("results_par_16x16.csv", sep="; ")
+    df_par_320 = pd.read_csv("results_par_20x16.csv", sep="; ")
+    df_par_512 = pd.read_csv("results_par_32x16.csv", sep="; ")
+    df_par_768 = pd.read_csv("results_par_32x24.csv", sep="; ")
+    df_par_1024 = pd.read_csv("results_par_32x32.csv", sep="; ")
+    df_seq = pd.read_csv("results_seq.csv", sep="; ")
+    df_par_256.sort_values(by=["image_size_pixels"], inplace=True)
+    df_par_320.sort_values(by=["image_size_pixels"], inplace=True)
+    df_par_512.sort_values(by=["image_size_pixels"], inplace=True)
+    df_par_768.sort_values(by=["image_size_pixels"], inplace=True)
+    df_par_1024.sort_values(by=["image_size_pixels"], inplace=True)
+    df_seq.sort_values(by=["image_size_pixels"], inplace=True)
+    return df_par_256, df_par_320, df_par_512, df_par_768, df_par_1024, df_seq
+
+
+def plot_bar(ax, df, multiplier, width, x, label, padding, bar_label=False):
+    offset = width * multiplier
+    rects = ax.bar(x + offset, df, width,
+                   label=label)
+    if bar_label:
+        labels_seq = [f"{t:.3}" for t in df]
+        ax.bar_label(rects, padding=padding, labels=labels_seq)
+    multiplier += 1
+    return multiplier
+
+
 if __name__ == "__main__":
     speedup()
     exec_times()
+    df_par_256, df_par_320, df_par_512, df_par_768, df_par_1024, df_seq = get_df()
+    df_seq.rename(columns={"execution_time": "execution_time_seq"})
+    df_seq["execution_time_256"] = df_par_256["execution_time"]
+    df_seq["execution_time_320"] = df_par_320["execution_time"]
+    df_seq["execution_time_512"] = df_par_512["execution_time"]
+    df_seq["execution_time_768"] = df_par_768["execution_time"]
+    df_seq["execution_time_1024"] = df_par_1024["execution_time"]
+    df_seq.to_csv("results_all.csv", index=False)

@@ -1,8 +1,8 @@
 #ifndef HISTOGRAM_EQUALIZER_SCANNER_CUH
 #define HISTOGRAM_EQUALIZER_SCANNER_CUH
-
+#define HIST_SIZE 256
 __global__ void Brent_Kung_scan_kernel(int *X, int *Y, int InputSize) {
-    extern __shared__ int XY[];
+    __shared__ int XY[HIST_SIZE];
     int i = 2 * blockIdx.x * blockDim.x + threadIdx.x;
     if (i < InputSize) {
         XY[threadIdx.x] = X[i];
