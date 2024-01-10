@@ -5,7 +5,7 @@
 
 #define HIST_SIZE 256
 #define BLOCK_DIM_X 32
-#define BLOCK_DIM_Y 32
+#define BLOCK_DIM_Y 24
 
 __constant__ int d_CDF[HIST_SIZE];
 

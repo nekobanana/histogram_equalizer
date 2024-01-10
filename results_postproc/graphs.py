@@ -16,12 +16,13 @@ def exec_times():
     fig, ax = plt.subplots(layout='constrained')
     fig.set_size_inches(12, 6)
 
+    ax.set_prop_cycle(color=plt.colormaps['Set2'].colors)
     plt.yscale("log")
 
     multiplier = plot_bar(ax, df_seq["execution_time"], multiplier, width, x, "sequential", 3)
     multiplier = plot_bar(ax, df_par_256["execution_time"], multiplier, width, x, "parallel (block 16x16)", 3)
-    multiplier = plot_bar(ax, df_par_320["execution_time"], multiplier, width, x, "parallel (block 32x16)", 9)
-    multiplier = plot_bar(ax, df_par_512["execution_time"], multiplier, width, x, "parallel (block 16x20)", 3)
+    multiplier = plot_bar(ax, df_par_320["execution_time"], multiplier, width, x, "parallel (block 16x16)", 9)
+    multiplier = plot_bar(ax, df_par_512["execution_time"], multiplier, width, x, "parallel (block 32x20)", 3)
     multiplier = plot_bar(ax, df_par_768["execution_time"], multiplier, width, x, "parallel (block 32x24)", 9)
     multiplier = plot_bar(ax, df_par_1024["execution_time"], multiplier, width, x, "parallel (block 32x32)", 3)
 
@@ -29,7 +30,6 @@ def exec_times():
     ax.set_title('Execution time')
     ax.set_xticks(x + width, df_seq["image_size"])
     ax.legend(loc='upper left')
-
     plt.savefig("execution_times")
     plt.close()
 
@@ -44,11 +44,11 @@ def speedup():
 
     fig, ax = plt.subplots(layout='constrained')
     fig.set_size_inches(12, 6)
-
+    ax.set_prop_cycle(color=plt.colormaps['Set2'].colors)
     ax.bar([], [])
     multiplier = plot_bar(ax, df_seq["execution_time"] / df_par_256["execution_time"], multiplier, width, x, "block 16x16", 3, True)
-    multiplier = plot_bar(ax, df_seq["execution_time"] / df_par_320["execution_time"], multiplier, width, x, "block 32x16", 3, True)
-    multiplier = plot_bar(ax, df_seq["execution_time"] / df_par_512["execution_time"], multiplier, width, x, "block 20x16", 3, True)
+    multiplier = plot_bar(ax, df_seq["execution_time"] / df_par_320["execution_time"], multiplier, width, x, "block 20x16", 3, True)
+    multiplier = plot_bar(ax, df_seq["execution_time"] / df_par_512["execution_time"], multiplier, width, x, "block 32x16", 3, True)
     multiplier = plot_bar(ax, df_seq["execution_time"] / df_par_768["execution_time"], multiplier, width, x, "block 32x24", 3, True)
     multiplier = plot_bar(ax, df_seq["execution_time"] / df_par_1024["execution_time"], multiplier, width, x, "block 32x32", 3, True)
 
@@ -99,4 +99,4 @@ if __name__ == "__main__":
     df_seq["execution_time_512"] = df_par_512["execution_time"]
     df_seq["execution_time_768"] = df_par_768["execution_time"]
     df_seq["execution_time_1024"] = df_par_1024["execution_time"]
-    df_seq.to_csv("results_all.csv", index=False)
+    df_seq.to_csv("results_all.csv", index=False, sep=";")
