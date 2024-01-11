@@ -1,0 +1,19 @@
+====================[ Build | histogram_equalizer | Debug ]=====================
+/snap/clion/261/bin/cmake/linux/x64/bin/cmake --build /home/quacksort/CLionProjects/histogram_equalizer/cmake-build-debug --target histogram_equalizer -j 14
+[1/3] Building CUDA object parallel/CMakeFiles/histogram_equalizer.dir/main.cu.o
+ptxas info    : 0 bytes gmem, 1024 bytes cmem[3]
+ptxas info    : Compiling entry function '_Z9equalizerPhiii' for 'sm_52'
+ptxas info    : Function properties for _Z9equalizerPhiii
+    0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Used 27 registers, 1024 bytes smem, 340 bytes cmem[0]
+ptxas info    : Compiling entry function '_Z9histogramPKhPiii' for 'sm_52'
+ptxas info    : Function properties for _Z9histogramPKhPiii
+    0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Used 9 registers, 1024 bytes smem, 344 bytes cmem[0]
+ptxas info    : Compiling entry function '_Z22Brent_Kung_scan_kernelPiS_i' for 'sm_52'
+ptxas info    : Function properties for _Z22Brent_Kung_scan_kernelPiS_i
+    0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Used 12 registers, 1024 bytes smem, 340 bytes cmem[0], 4 bytes cmem[2]
+[3/3] Linking CUDA executable parallel/histogram_equalizer
+
+Build finished

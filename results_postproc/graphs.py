@@ -21,8 +21,8 @@ def exec_times():
 
     multiplier = plot_bar(ax, df_seq["execution_time"], multiplier, width, x, "sequential", 3)
     multiplier = plot_bar(ax, df_par_256["execution_time"], multiplier, width, x, "parallel (block 16x16)", 3)
-    multiplier = plot_bar(ax, df_par_320["execution_time"], multiplier, width, x, "parallel (block 16x16)", 9)
-    multiplier = plot_bar(ax, df_par_512["execution_time"], multiplier, width, x, "parallel (block 32x20)", 3)
+    multiplier = plot_bar(ax, df_par_320["execution_time"], multiplier, width, x, "parallel (block 20x16)", 9)
+    multiplier = plot_bar(ax, df_par_512["execution_time"], multiplier, width, x, "parallel (block 32x16)", 3)
     multiplier = plot_bar(ax, df_par_768["execution_time"], multiplier, width, x, "parallel (block 32x24)", 9)
     multiplier = plot_bar(ax, df_par_1024["execution_time"], multiplier, width, x, "parallel (block 32x32)", 3)
 
